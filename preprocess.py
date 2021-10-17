@@ -80,7 +80,33 @@ def extract_letters(body: bs4.element.Tag, beginnings: [int], endings: [int]) ->
         letters.append(body_text[beginning:matched_ending])
     return letters
 
-def final_cosmetics(letter: str) -> str:
+def process_letter(letter: str) -> (int, str, str):
+    '''Extract number, author and content of a given letter'''
+
+    # Extract first line with number and receiver
+    first_line = letter[0:letter.find("\n")]
+
+    # Extract letter number from first line
+    i, j = re.search("^\d+\.", first_line).span()
+    letter_number = int(first_line[i:j-1])
+
+    # Extract writer from first line
+    i, j = re.search("(Schiller|Goethe)", first_line).span()
+    receiver = first_line[i:j]
+    if receiver == "Schiller":
+        writer = "Goethe"
+    elif receiver == "Goethe":
+        writer = "Schiller"
+    else:
+        writer = "NA"
+
+    # Extract main text from letter
+    main_text = extract_main_text(letter)
+
+    return (letter_number, writer, main_text)
+
+            
+def extract_main_text(letter: str) -> str:
     # Remove first line
     _, j = re.search("</h3>\n", letter).span()
     letter = letter[j:]
@@ -94,7 +120,8 @@ def final_cosmetics(letter: str) -> str:
     i, _ = re.search("\n+$", letter).span()
     letter = letter[:i]
 
-    # Replace \n, \t "," with " "
+    # Replace \n, \t "," with " " to avoid potential problems
+    # when importint data from saved CSV file again
     letter = letter.replace("\n", " ")
     letter = letter.replace("\t", " ")
     
@@ -106,7 +133,7 @@ def main() -> None:
     
     # 14 chapters we scraped
     for nb_chapter in range(1,14):
-        # Extract all beginning indices, ending indices, and contents
+        # Extract the beginning indices, ending indices, and contents of the chapter's letters
         filename = "./raw/"+str(nb_chapter)+".html"
         body = clean_html_body(load_html_body(filename))
         beginnings = find_letter_beginnings(body)
@@ -114,27 +141,10 @@ def main() -> None:
         letters = extract_letters(body, beginnings, endings)
 
         for letter in letters:
-            # Extract first line of every letter containing number and receiver
-            first_line = letter[0:letter.find("\n")]
+            # Extract info from letter
+            letter_number, writer, main_text = process_letter(letter)
 
-            # Extract letter number from first line
-            i, j = re.search("^\d+\.", first_line).span()
-            letter_number = int(first_line[i:j-1])
-
-            # Extract writer from first line
-            i, j = re.search("(Schiller|Goethe)", first_line).span()
-            receiver = first_line[i:j]
-            if receiver == "Schiller":
-                writer = "Goethe"
-            elif receiver == "Goethe":
-                writer = "Schiller"
-            else:
-                writer = "NA"
-
-            # Extract main letter text from letter
-            main_text = final_cosmetics(letter)
-
-            # Write to file
+            # Write entry to file
             print(">>>>>>>>>> ", letter_number, "\t", writer, "\t", main_text)
             f.write(str(letter_number) + '\t' + writer + '\t' + main_text+'\n')
 
