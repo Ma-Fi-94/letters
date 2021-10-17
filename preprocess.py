@@ -93,6 +93,10 @@ def final_cosmetics(letter: str) -> str:
     # Remove \n at the end
     i, _ = re.search("\n+$", letter).span()
     letter = letter[:i]
+
+    # Replace \n, \t "," with " "
+    letter = letter.replace("\n", " ")
+    letter = letter.replace("\t", " ")
     
     return letter
 
@@ -131,8 +135,8 @@ def main() -> None:
             main_text = final_cosmetics(letter)
 
             # Write to file
-            f.write(str(letter_number) + ',"' + writer + '","' + main_text+'"\n')
-            print(letter_number)
+            print(">>>>>>>>>> ", letter_number, "\t", writer, "\t", main_text)
+            f.write(str(letter_number) + '\t' + writer + '\t' + main_text+'\n')
 
     f.close()        
 
