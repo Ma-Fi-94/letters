@@ -6,6 +6,7 @@ def download(url: str, filename: str) -> None:
     '''Download the website at *url* and save it to *filename*'''
     try:
         r = requests.get(url)
+        r.encoding = r.apparent_encoding
         with open(filename, 'w') as f:
             f.write(r.text)
     except:
